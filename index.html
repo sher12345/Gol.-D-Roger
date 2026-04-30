@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#B7791F">
+  <title>Gold Calculator PK</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #B7791F; --gold-light: #F6E05E; --gold-dark: #744210;
+      --bg: #0f0f0f; --bg2: #1a1a1a; --bg3: #242424; --bg4: #2e2e2e;
+      --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+      --text: #f0f0f0; --text2: #a0a0a0; --text3: #555;
+      --green-bg: rgba(34,197,94,0.1); --green: #4ade80;
+      --red-bg: rgba(239,68,68,0.1); --red: #f87171;
+      --warn-bg: rgba(251,191,36,0.08); --warn: #fbbf24;
+      --ok-bg: rgba(34,197,94,0.08); --ok: #4ade80;
+      --danger-bg: rgba(239,68,68,0.1); --danger: #f87171;
+      --blue-bg: rgba(96,165,250,0.08); --blue: #60a5fa;
+      --radius: 12px; --radius-sm: 8px;
+    }
+    html,body { height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+    .app { max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:3rem; }
+
+    /* HEADER */
+    .header { background:var(--bg2); border-bottom:1px solid var(--border); padding:.85rem 1.25rem; position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:10px; }
+    .header-icon { width:30px; height:30px; background:var(--gold); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; color:#1a0f00; font-weight:700; }
+    .header h1 { font-size:16px; font-weight:600; }
+    .header p { font-size:11px; color:var(--text2); }
+
+    /* NAV TABS */
+    .nav { display:flex; background:var(--bg2); border-bottom:1px solid var(--border); }
+    .nav-btn { flex:1; padding:.65rem 0; font-size:12px; font-weight:500; color:var(--text2); background:none; border:none; cursor:pointer; border-bottom:2px solid transparent; transition:all .15s; }
+    .nav-btn.active { color:var(--gold); border-bottom-color:var(--gold); }
+
+    /* PAGES */
+    .page { display:none; padding:1rem; flex-direction:column; gap:12px; }
+    .page.active { display:flex; }
+
+    /* CARD */
+    .card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; }
+    .card-title { font-size:11px; font-weight:600; color:var(--gold); text-transform:uppercase; letter-spacing:.07em; margin-bottom:12px; }
+
+    /* FORM */
+    .row { display:flex; gap:10px; margin-bottom:10px; }
+    .row:last-child { margin-bottom:0; }
+    .field { display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
+    .field label { font-size:12px; color:var(--text2); }
+    input, select { height:42px; border-radius:var(--radius-sm); border:1px solid var(--border2); background:var(--bg3); color:var(--text); padding:0 12px; font-size:15px; width:100%; -webkit-appearance:none; appearance:none; }
+    select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0a0a0' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+    input:focus, select:focus { outline:none; border-color:var(--gold); background:#2a2418; }
+    input[type=number] { -moz-appearance:textfield; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; }
+
+    /* PILLS */
+    .pill-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .pill { padding:6px 12px; border-radius:20px; border:1px solid var(--border2); font-size:12px; font-weight:500; cursor:pointer; background:var(--bg3); color:var(--text2); transition:all .15s; }
+    .pill.active { background:var(--gold); color:#1a0f00; border-color:var(--gold); font-weight:600; }
+
+    /* NOTES */
+    .note { font-size:12px; padding:10px 12px; border-radius:var(--radius-sm); margin-top:8px; line-height:1.6; border-left:2px solid var(--warn); background:var(--warn-bg); color:var(--warn); border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+    .note.ok { border-color:var(--ok); background:var(--ok-bg); color:var(--ok); }
+    .note.danger { border-color:var(--danger); background:var(--danger-bg); color:var(--danger); }
+    .note.blue { border-color:var(--blue); background:var(--blue-bg); color:var(--blue); }
+    .note strong { font-weight:600; color:inherit; }
+
+    /* EXPLAINER */
+    .explainer { background:var(--bg3); border-radius:var(--radius-sm); padding:10px 12px; margin-top:10px; font-size:12px; line-height:1.65; color:var(--text2); border-left:2px solid var(--gold); border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+    .explainer strong { font-weight:600; color:var(--text); }
+    .explainer .verdict { margin-top:8px; padding:8px 10px; border-radius:var(--radius-sm); font-size:12px; line-height:1.55; font-weight:500; }
+    .explainer .verdict.ok { background:rgba(74,222,128,.1); color:#4ade80; }
+    .explainer .verdict.warn { background:rgba(251,191,36,.1); color:#fbbf24; }
+    .explainer .verdict.bad { background:rgba(248,113,113,.12); color:#f87171; }
+
+    /* PURITY BAR */
+    .purity-row { display:flex; align-items:center; gap:10px; margin-top:6px; }
+    .pbar { flex:1; height:5px; background:var(--border2); border-radius:3px; overflow:hidden; }
+    .pfill { height:100%; background:var(--gold); border-radius:3px; transition:width .3s; }
+
+    /* RESULTS */
+    .breakdown-row { display:flex; justify-content:space-between; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .breakdown-row:last-child { border-bottom:none; }
+    .breakdown-row .bl { color:var(--text2); font-size:12px; }
+    .breakdown-row .bv { font-weight:500; }
+    .breakdown-row .bv.red { color:var(--red); }
+    .breakdown-row .bv.grn { color:var(--green); }
+    .metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+    .metric { background:var(--bg3); border-radius:var(--radius-sm); padding:10px 12px; }
+    .metric.gm { background:var(--green-bg); }
+    .metric.rm { background:var(--red-bg); }
+    .metric.total { grid-column:1/-1; background:rgba(183,121,31,.1); border:1px solid rgba(183,121,31,.25); }
+    .metric .ml { font-size:11px; color:var(--text2); margin-bottom:3px; }
+    .metric.gm .ml { color:var(--green); }
+    .metric.rm .ml { color:var(--red); }
+    .metric.total .ml { color:var(--gold); font-size:12px; }
+    .metric .mv { font-size:17px; font-weight:600; color:var(--text); }
+    .metric.gm .mv { color:var(--green); }
+    .metric.rm .mv { color:var(--red); }
+    .metric.total .mv { font-size:22px; color:var(--gold); }
+    .metric .ms { font-size:11px; color:var(--text3); margin-top:2px; }
+    .weight-info { font-size:12px; color:var(--text2); background:var(--bg3); border-radius:var(--radius-sm); padding:8px 12px; margin-top:8px; }
+    .scam-box { display:none; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.25); border-radius:var(--radius-sm); padding:10px 12px; margin-top:10px; font-size:12px; color:var(--red); line-height:1.6; }
+
+    /* HALLMARK GUIDE */
+    .hm-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+    .hm-table th { font-size:11px; font-weight:600; color:var(--text2); text-align:left; padding:6px 8px; border-bottom:1px solid var(--border2); }
+    .hm-table td { padding:8px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+    .hm-table tr:last-child td { border-bottom:none; }
+    .hm-table .stamp { font-family:monospace; font-size:14px; font-weight:700; color:var(--gold); }
+    .hm-table .karat { font-weight:600; color:var(--text); }
+    .hm-table .purity { color:var(--text2); font-size:12px; }
+    .hm-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+    .hm-badge.pk { background:rgba(183,121,31,.15); color:var(--gold); }
+    .hm-badge.rare { background:var(--bg3); color:var(--text2); }
+
+    /* TRICK DECODER */
+    .trick-card { background:var(--bg3); border-radius:var(--radius-sm); padding:12px; margin-bottom:10px; border-left:3px solid var(--red); }
+    .trick-card .tc-title { font-size:13px; font-weight:600; color:var(--red); margin-bottom:6px; }
+    .trick-card .tc-body { font-size:12px; color:var(--text2); line-height:1.6; }
+    .trick-card .tc-body strong { color:var(--text); font-weight:600; }
+    .trick-card .tc-counter { margin-top:8px; padding:7px 10px; background:rgba(74,222,128,.07); border-radius:var(--radius-sm); font-size:12px; color:var(--green); line-height:1.55; }
+    .trick-card .tc-counter strong { font-weight:600; }
+
+    /* LIVE TEACHER */
+    .teacher-box { background:var(--bg3); border-radius:var(--radius-sm); padding:12px; margin-top:10px; }
+    .teacher-box .tb-header { font-size:11px; font-weight:600; color:var(--gold); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; }
+    .teacher-row { display:flex; justify-content:space-between; font-size:12px; padding:5px 0; border-bottom:1px solid var(--border); }
+    .teacher-row:last-child { border-bottom:none; }
+    .teacher-row .tr-label { color:var(--text2); }
+    .teacher-row .tr-val { font-weight:600; }
+    .teacher-row .tr-val.ok { color:var(--green); }
+    .teacher-row .tr-val.warn { color:var(--warn); }
+    .teacher-row .tr-val.bad { color:var(--red); }
+    .teacher-verdict { margin-top:10px; padding:10px 12px; border-radius:var(--radius-sm); font-size:12px; line-height:1.6; font-weight:500; }
+    .teacher-verdict.ok { background:rgba(74,222,128,.08); color:var(--green); border-left:2px solid var(--green); border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+    .teacher-verdict.warn { background:rgba(251,191,36,.08); color:var(--warn); border-left:2px solid var(--warn); border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+    .teacher-verdict.bad { background:rgba(248,113,113,.1); color:var(--red); border-left:2px solid var(--red); border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+
+    .divider { height:1px; background:var(--border); margin:12px 0; }
+    .section-sub { font-size:13px; font-weight:600; color:var(--text); margin:12px 0 6px; }
+    .tip-row { display:flex; gap:8px; font-size:12px; color:var(--text2); padding:6px 0; border-bottom:1px solid var(--border); line-height:1.5; }
+    .tip-row:last-child { border-bottom:none; }
+    .tip-icon { font-size:14px; flex-shrink:0; margin-top:1px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-icon">&#9670;</div>
+    <div>
+      <h1>Gold Calculator PK</h1>
+      <p>Masha · Raati · Kaat · Anti-scam · PSQCA Guide</p>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="switchPage('calc')">Calculator</button>
+    <button class="nav-btn" onclick="switchPage('hallmark')">Hallmark Guide</button>
+    <button class="nav-btn" onclick="switchPage('tricks')">Dealer Tricks</button>
+  </div>
+
+  <!-- ===== CALCULATOR PAGE ===== -->
+  <div class="page active" id="page-calc">
+
+    <div class="card">
+      <div class="card-title">Market Rate</div>
+      <div class="row">
+        <div class="field">
+          <label>Price per tola (PKR) — 24K base rate</label>
+          <input type="number" id="pricePerTola" value="290000" step="1000" inputmode="numeric">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Gold karat on your piece</label>
+          <select id="karat">
+            <option value="24">24K — 999 stamp — 99.9% pure</option>
+            <option value="23">23K — 958 stamp — 95.8% pure</option>
+            <option value="22" selected>22K — 916 stamp — 91.7% (standard PK)</option>
+            <option value="21">21K — 875 stamp — 87.5% pure</option>
+            <option value="20">20K — 833 stamp — 83.3% pure</option>
+            <option value="18">18K — 750 stamp — 75.0% pure</option>
+            <option value="14">14K — 585 stamp — 58.3% pure</option>
+          </select>
+        </div>
+      </div>
+      <div class="purity-row">
+        <span style="font-size:11px;color:var(--text2)">Purity</span>
+        <div class="pbar"><div class="pfill" id="pBar" style="width:91.7%"></div></div>
+        <span style="font-size:12px;font-weight:600;color:var(--gold)" id="pLabel">91.7%</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:5px" id="ratePerG">Rate: PKR —/g at 22K</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Weight</div>
+      <div class="pill-row">
+        <button class="pill active" id="tGram" onclick="switchTab('gram')">Grams</button>
+        <button class="pill" id="tMasha" onclick="switchTab('masha')">Masha / Raati</button>
+      </div>
+      <div id="gramPanel">
+        <div class="row">
+          <div class="field"><label>Grams</label><input type="number" id="grams" value="11.664" step="0.001" min="0" inputmode="decimal"></div>
+        </div>
+      </div>
+      <div id="mashaPanel" style="display:none">
+        <div class="row">
+          <div class="field"><label>Tola</label><input type="number" id="tola" value="1" step="1" min="0" inputmode="numeric"></div>
+          <div class="field"><label>Masha</label><input type="number" id="masha" value="0" step="1" min="0" inputmode="numeric"></div>
+          <div class="field"><label>Raati</label><input type="number" id="raati" value="0" step="1" min="0" inputmode="numeric"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">1 Tola = 12 Masha = 96 Raati = 11.664g &nbsp;|&nbsp; 1 Masha = 8 Raati = 0.972g</div>
+      </div>
+      <div class="weight-info" id="weightInfo">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Jeweler Kaat (Deduction)</div>
+      <div class="pill-row">
+        <button class="pill active" id="kNone" onclick="switchKaat('none')">No kaat</button>
+        <button class="pill" id="kRaati" onclick="switchKaat('raati')">Raati kaat</button>
+        <button class="pill" id="kMasha" onclick="switchKaat('masha')">Masha kaat</button>
+        <button class="pill" id="kPct" onclick="switchKaat('pct')">% kaat</button>
+        <button class="pill" id="kTankhwa" onclick="switchKaat('tankhwa')">Touch / Tankhwa</button>
+        <button class="pill" id="kCustom" onclick="switchKaat('custom')">Solder / Tamba</button>
+      </div>
+
+      <div id="kNonePanel">
+        <div class="note ok">No deduction — full gold value. Use when no kaat is agreed or you are selling back at market rate.</div>
+      </div>
+
+      <div id="kRaatiPanel" style="display:none">
+        <div class="row">
+          <div class="field"><label>Raati deducted per masha</label><input type="number" id="kaatRaatiPerMasha" value="1" step="0.5" min="0" max="8" inputmode="decimal"></div>
+          <div class="field"><label>Extra flat masha deducted</label><input type="number" id="kaatExtraMasha" value="0" step="1" min="0" inputmode="numeric"></div>
+        </div>
+        <div class="explainer">
+          <strong>How raati kaat works:</strong><br>
+          For every 1 masha you bring, the jeweler deducts X raati from its value before paying you. Since 1 masha = 8 raati, deducting 1 raati per masha = 12.5% loss on that masha. Deducting 2 raati = 25% loss.<br><br>
+          <strong>Fair range:</strong> 0–1 raati/masha (simple items). Max 2 raati for complex work.<br>
+          <strong>Red flag:</strong> Above 2 raati/masha = overcharging. Above 4 = extreme scam.
+          <div id="raatiVerdict" class="verdict ok" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div id="kMashaPanel" style="display:none">
+        <div class="row">
+          <div class="field"><label>Masha deducted (flat)</label><input type="number" id="kaatMashaFlat" value="1" step="0.5" min="0" inputmode="decimal"></div>
+          <div class="field"><label>Extra Raati (flat)</label><input type="number" id="kaatRaatiFlat" value="0" step="1" min="0" max="7" inputmode="numeric"></div>
+        </div>
+        <div class="explainer">
+          <strong>How masha kaat works:</strong><br>
+          The jeweler deducts a fixed number of masha (and optionally raati) from your total gold weight, regardless of quantity.<br><br>
+          <strong>Example:</strong> You bring 5 masha, jeweler says "1 masha kaat" → you get paid for 4 masha only.<br>
+          <strong>Red flag:</strong> If kaat exceeds 10% of your total weight — that is excessive.
+          <div id="mashaVerdict" class="verdict ok" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div id="kPctPanel" style="display:none">
+        <div class="row">
+          <div class="field"><label>Kaat percentage (%)</label><input type="number" id="kaatPct" value="5" step="0.5" min="0" max="50" inputmode="decimal"></div>
+        </div>
+        <div class="explainer">
+          <strong>How % kaat works:</strong><br>
+          The simplest form — a direct percentage deducted from total gold value.<br><br>
+          <strong>Fair range:</strong> 3–7% for standard jewelry. Up to 10% for intricate/stone-set work.<br>
+          <strong>Red flag:</strong> Some jewelers quote % kaat AND raati kaat together — this is a double deduction scam. Insist on one method only.
+          <div id="pctVerdict" class="verdict ok" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div id="kTankhwaPanel" style="display:none">
+        <div class="row">
+          <div class="field"><label>Jeweler's touch claim (%)</label><input type="number" id="kaatTankhwa" value="0" step="0.5" min="0" max="30" inputmode="decimal"></div>
+          <div class="field"><label>Impurity/alloy claim (%)</label><input type="number" id="kaatImpurity" value="0" step="0.5" min="0" max="20" inputmode="decimal"></div>
+        </div>
+        <div class="teacher-box" id="tankhwaTeacher">
+          <div class="tb-header">What the jeweler is doing vs. what is correct</div>
+          <div id="tankhwaRows"></div>
+          <div id="tankhwaVerdict" class="teacher-verdict ok"></div>
+        </div>
+        <div class="explainer" style="margin-top:10px">
+          <strong>Tankhwa / Touch explained:</strong><br>
+          The jeweler uses a touchstone or acid test and claims your gold is lower purity than its stamp. E.g. your "22K" piece is declared "only 21K" by their test, and they pay at 21K rate.<br><br>
+          <strong>The "76 number" (96-point system) trick:</strong><br>
+          Old system: 24K = 96 points. They say your gold is "76" which means 76/96 = 79.2% ≈ only 19K. Your 22K piece is deliberately rated as 19K — you lose 12.5% value instantly.<br><br>
+          <strong>The fineness downgrade trick:</strong><br>
+          Your piece is stamped 916 (22K). Dealer says "it's only 875" (21K) by their test. That 1 karat difference = 4.6% price cut on the full value.<br><br>
+          <strong>Your rights:</strong> PSQCA-hallmarked gold has legally certified purity. A jeweler's verbal touchstone claim CANNOT override an official hallmark. Demand the test be done in front of you at a registered assay center.
+        </div>
+      </div>
+
+      <div id="kCustomPanel" style="display:none">
+        <div class="row">
+          <div class="field"><label>Deducted weight (grams)</label><input type="number" id="kaatCustomG" value="0.3" step="0.05" min="0" inputmode="decimal"></div>
+        </div>
+        <div class="explainer">
+          <strong>Solder / Tamba (copper) claim:</strong><br>
+          Jeweler says some weight is copper solder used to join pieces and won't pay gold rate for it.<br><br>
+          <strong>What's fair:</strong> 0.05–0.2g for lightly soldered jewelry. Up to 0.3g for heavy chain links.<br>
+          <strong>Red flag:</strong> Above 0.5g on small items, or any solder claim on a plain bangle/ring with no joins.
+          <div id="solderVerdict" class="verdict ok" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="scam-box" id="scamWarning"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Making / Labour Charges (optional)</div>
+      <div class="row">
+        <div class="field"><label>Per gram (PKR)</label><input type="number" id="makingG" value="0" step="100" min="0" inputmode="numeric"></div>
+        <div class="field"><label>Per masha (PKR)</label><input type="number" id="makingM" value="0" step="100" min="0" inputmode="numeric"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Flat amount (PKR)</label><input type="number" id="makingF" value="0" step="500" min="0" inputmode="numeric"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Breakdown</div>
+      <div id="breakdownRows"></div>
+      <div class="metrics-grid">
+        <div class="metric gm"><div class="ml">Gold value (before kaat)</div><div class="mv" id="rGold">—</div><div class="ms">PKR</div></div>
+        <div class="metric rm"><div class="ml">Kaat deduction</div><div class="mv" id="rKaat">—</div><div class="ms" id="rKaatSub">PKR</div></div>
+        <div class="metric rm"><div class="ml">Making charges</div><div class="mv" id="rMaking">—</div><div class="ms">PKR</div></div>
+        <div class="metric"><div class="ml">Kaat as % of value</div><div class="mv" id="rKaatPct">—</div><div class="ms">lower is better</div></div>
+        <div class="metric total"><div class="ml">Total fair price — what you should pay / receive</div><div class="mv" id="rTotal">—</div><div class="ms">PKR</div></div>
+      </div>
+      <div id="fairnessBox" class="note ok" style="margin-top:10px">—</div>
+    </div>
+
+  </div><!-- end calc page -->
+
+
+  <!-- ===== HALLMARK GUIDE PAGE ===== -->
+  <div class="page" id="page-hallmark">
+
+    <div class="card">
+      <div class="card-title">PSQCA &amp; International Hallmark Stamps</div>
+      <div class="note blue" style="margin-bottom:10px">
+        <strong>How to read your gold stamp:</strong> Look inside the ring band, near the necklace clasp, or on the pendant bail. You will see a number (like 916) or letters (like 22K). These are internationally standardized purity marks. PSQCA requires jewelers to follow these standards in Pakistan.
+      </div>
+      <table class="hm-table">
+        <tr><th>Stamp</th><th>Karat</th><th>Purity</th><th>In Pakistan</th></tr>
+        <tr>
+          <td class="stamp">999</td><td class="karat">24K</td>
+          <td class="purity">99.9% gold</td>
+          <td><span class="hm-badge rare">Bars / coins only</span></td>
+        </tr>
+        <tr>
+          <td class="stamp">958</td><td class="karat">23K</td>
+          <td class="purity">95.8% gold</td>
+          <td><span class="hm-badge rare">Very rare</span></td>
+        </tr>
+        <tr>
+          <td class="stamp">916</td><td class="karat">22K</td>
+          <td class="purity">91.6% gold</td>
+          <td><span class="hm-badge pk">Most common PK</span></td>
+        </tr>
+        <tr>
+          <td class="stamp">875</td><td class="karat">21K</td>
+          <td class="purity">87.5% gold</td>
+          <td><span class="hm-badge pk">Common PK</span></td>
+        </tr>
+        <tr>
+          <td class="stamp">833</td><td class="karat">20K</td>
+          <td class="purity">83.3% gold</td>
+          <td><span class="hm-badge rare">Less common</span></td>
+        </tr>
+        <tr>
+          <td class="stamp">750</td><td class="karat">18K</td>
+          <td class="purity">75.0% gold</td>
+          <td><span class="hm-badge pk">Common (imported)</span></td>
+        </tr>
+        <tr>
+          <td class="stamp">585</td><td class="karat">14K</td>
+          <td class="purity">58.5% gold</td>
+          <td><span class="hm-badge rare">Rare in PK</span></td>
+        </tr>
+        <tr>
+          <td class="stamp">417</td><td class="karat">10K</td>
+          <td class="purity">41.7% gold</td>
+          <td><span class="hm-badge rare">Very rare in PK</span></td>
+        </tr>
+        <tr>
+          <td class="stamp">375</td><td class="karat">9K</td>
+          <td class="purity">37.5% gold</td>
+          <td><span class="hm-badge rare">Not sold in PK</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">The Old 96-Point System (Dealer Trick Decoder)</div>
+      <div class="note danger" style="margin-bottom:10px">
+        Some dealers still use the old system where 24K = 96 points. They quote a number like "76" or "80" to confuse you. Here is how to decode any number they quote.
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Dealer quotes this number (out of 96)</label>
+          <input type="number" id="oldSystem" value="76" step="1" min="1" max="96" inputmode="numeric">
+        </div>
+      </div>
+      <div class="teacher-box" style="margin-top:0">
+        <div class="tb-header">What that number actually means</div>
+        <div id="oldSystemResult"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">PSQCA Hallmark — What to Look For</div>
+      <div class="section-sub">A genuine PSQCA-compliant hallmark includes:</div>
+      <div style="margin-top:6px">
+        <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">1</div><div><strong style="color:var(--text)">Purity / fineness number</strong> — stamped as 916, 750, etc. This is the most important mark. It tells you exact gold content.</div></div>
+        <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">2</div><div><strong style="color:var(--text)">Karat mark</strong> — may appear as 22K or 22Kt alongside or instead of the fineness number.</div></div>
+        <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">3</div><div><strong style="color:var(--text)">Jeweler's mark</strong> — a code or initials identifying the registered jeweler. Registered jewelers have PSQCA-issued codes.</div></div>
+        <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">4</div><div><strong style="color:var(--text)">Hallmark certificate</strong> — any PSQCA-compliant jeweler should provide a written certificate on request. If they refuse — walk away.</div></div>
+      </div>
+      <div class="note" style="margin-top:10px">
+        <strong>Pakistan enforcement reality:</strong> PSQCA hallmarking is legally required but enforcement is still inconsistent across cities. In Karachi, Lahore, Islamabad — major registered jewelers comply. In smaller markets, always verify with a touchstone test at an independent assay center before buying or selling.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">How to verify your gold yourself</div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">&#9670;</div><div><strong style="color:var(--text)">Check the stamp location:</strong> Inside ring band, near necklace clasp, on bracelet clasp, on pendant bail. Use a phone camera zoom — stamps are tiny.</div></div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">&#9670;</div><div><strong style="color:var(--text)">Match stamp to weight:</strong> Weigh the piece on a digital scale. Cross-check using this calculator. If the jeweler's price doesn't match — something is wrong.</div></div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">&#9670;</div><div><strong style="color:var(--text)">Request independent assay:</strong> Any registered gold testing lab can XRF-test your gold in minutes. Cost: PKR 200–500. Worth it for large purchases.</div></div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">&#9670;</div><div><strong style="color:var(--text)">Acid test:</strong> Gold does not react to nitric acid. A 22K piece touched with acid should show no color change. A jeweler doing this test in front of you is a good sign.</div></div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--gold)">&#9670;</div><div><strong style="color:var(--text)">Magnet test:</strong> Real gold is not magnetic. If a magnet attracts the piece strongly, it is not solid gold. Note: some clasps may be steel and will attract.</div></div>
+    </div>
+
+  </div><!-- end hallmark page -->
+
+
+  <!-- ===== DEALER TRICKS PAGE ===== -->
+  <div class="page" id="page-tricks">
+
+    <div class="card">
+      <div class="card-title">Common Jeweler Tricks in Pakistan</div>
+      <div class="note danger" style="margin-bottom:0">This page teaches you every trick dealers use so you recognize them in real time.</div>
+    </div>
+
+    <div class="trick-card">
+      <div class="tc-title">Trick 1 — The "76" / 96-point downgrade</div>
+      <div class="tc-body">
+        Dealer says your 22K gold is "only 76" using the old 96-point scale. 76/96 = 79.2% = roughly 19K. Your gold is worth 22K rate but they pay you at 19K.<br>
+        <strong>Money lost:</strong> On PKR 290,000/tola gold — they underpay by ~PKR 37,000 per tola.
+      </div>
+      <div class="tc-counter"><strong>Counter:</strong> Ask "76 out of how many?" The answer should be 96. Then calculate: 76/96 × 24 = 19K. Ask why hallmarked 22K gold is being rated as 19K. If they can't justify with a certified assay — refuse.</div>
+    </div>
+
+    <div class="trick-card">
+      <div class="tc-title">Trick 2 — Fineness downgrade (916 → 875)</div>
+      <div class="tc-body">
+        Your piece is stamped 916 (22K). Dealer says "our touchstone shows 875" (21K). This is a 4.6% cut. On PKR 290,000/tola gold, that's ~PKR 12,000 per tola lost.<br>
+        <strong>The trick:</strong> Their touchstone is calibrated wrong, or they are lying. A stamp from a registered jeweler is official certification.
+      </div>
+      <div class="tc-counter"><strong>Counter:</strong> Legally, a PSQCA hallmark stamp overrides any informal touchstone reading. Demand testing at a certified assay lab. Never accept a verbal touch claim on hallmarked gold.</div>
+    </div>
+
+    <div class="trick-card">
+      <div class="tc-title">Trick 3 — Double kaat (% + raati)</div>
+      <div class="tc-body">
+        Dealer quotes "5% kaat" AND "1 raati per masha kaat" separately. You think these are the same thing — but they are applying BOTH deductions. Effective loss: 5% + 12.5% per masha = up to 17% total.
+      </div>
+      <div class="tc-counter"><strong>Counter:</strong> Ask the dealer to clarify: "Is this % kaat OR raati kaat — not both." Write it down before agreeing. Calculate both separately on this app and compare.</div>
+    </div>
+
+    <div class="trick-card">
+      <div class="tc-title">Trick 4 — Inflated raati kaat</div>
+      <div class="tc-body">
+        Dealer says "3 raati per masha kaat." That sounds small — but 3 raati out of 8 = 37.5% loss per masha. On a 5-masha piece at PKR 290,000/tola, you lose PKR 52,000+.
+      </div>
+      <div class="tc-counter"><strong>Counter:</strong> Always convert raati kaat to a percentage using this app. Fair kaat is max 2 raati/masha (25%). Above that — negotiate hard or leave.</div>
+    </div>
+
+    <div class="trick-card">
+      <div class="tc-title">Trick 5 — Tamba (solder/copper) claim</div>
+      <div class="tc-body">
+        Dealer says "2 grams is copper solder, we pay only for the rest." On a 10-gram piece, they deduct 2g = 20% of your gold value disappears under a "copper" claim.
+      </div>
+      <div class="tc-counter"><strong>Counter:</strong> Legitimate solder in a standard ring is 0.05–0.2g maximum. For a bangle with no joins, solder claim should be zero. Use the Solder/Tamba calculator on the Calculator page to see the real % impact.</div>
+    </div>
+
+    <div class="trick-card">
+      <div class="tc-title">Trick 6 — Wrong scale / tola confusion</div>
+      <div class="tc-body">
+        Dealer weighs your gold on a scale set to different units, or confuses "international troy tola" (11.664g) with older local variants. Some older scales use 11.5g per tola — a 1.4% shortfall.
+      </div>
+      <div class="tc-counter"><strong>Counter:</strong> Official PSQCA / Pakistan standard: 1 Tola = 11.664 grams exactly. 1 Masha = 0.972g. 1 Raati = 0.1215g. Weigh on your own certified scale first. Never trust only the dealer's scale.</div>
+    </div>
+
+    <div class="trick-card">
+      <div class="tc-title">Trick 7 — "Current rate" manipulation</div>
+      <div class="tc-body">
+        Dealer quotes a rate "per tola" lower than the Sarafa Bazar rate, claiming it's "today's buying rate" vs "selling rate." The spread can be 2–5% — sometimes legitimate but often inflated.
+      </div>
+      <div class="tc-counter"><strong>Counter:</strong> Check the live Sarafa Bazar rate (Karachi, Lahore) on any gold price website or app before visiting any jeweler. The buy-sell spread for 22K should not exceed 1–2%.</div>
+    </div>
+
+    <div class="trick-card">
+      <div class="tc-title">Trick 8 — Making charges on exchange</div>
+      <div class="tc-body">
+        You bring old gold to exchange for new jewelry. Dealer applies kaat on your old gold AND making charges on the new piece AND a "difference" fee. Three deductions at once.
+      </div>
+      <div class="tc-counter"><strong>Counter:</strong> Calculate old gold value separately. Calculate new gold value separately. The only legitimate charges are: (1) fair kaat on old gold, (2) making charges on new piece. Any additional "difference" fee is a markup — negotiate it to zero or close.</div>
+    </div>
+
+    <div class="card" style="margin-top:4px">
+      <div class="card-title">Your Rights as a Buyer in Pakistan</div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--green)">&#10003;</div><div>You have the right to weigh gold on your own scale or a third-party scale.</div></div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--green)">&#10003;</div><div>You have the right to request a PSQCA hallmark certificate for any hallmarked piece.</div></div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--green)">&#10003;</div><div>A PSQCA hallmark legally certifies purity — a dealer's touchstone cannot override it without a certified assay.</div></div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--green)">&#10003;</div><div>You can request that any test (touchstone, acid) be performed in front of you.</div></div>
+      <div class="tip-row"><div class="tip-icon" style="color:var(--green)">&#10003;</div><div>Complaint authority: PSQCA Consumer Protection Cell — file a complaint if a registered jeweler misrepresents purity.</div></div>
+    </div>
+
+  </div><!-- end tricks page -->
+
+</div><!-- end app -->
+
+<script>
+const TOLA=11.664,MASHA=0.972,RAATI=0.1215;
+const KARATS={24:1,23:23/24,22:22/24,21:21/24,20:20/24,18:18/24,14:14/24};
+let tab='gram',kaat='none';
+
+function switchPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const idx={calc:0,hallmark:1,tricks:2}[p];
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+}
+
+function switchTab(t){
+  tab=t;
+  document.getElementById('tGram').classList.toggle('active',t==='gram');
+  document.getElementById('tMasha').classList.toggle('active',t==='masha');
+  document.getElementById('gramPanel').style.display=t==='gram'?'':'none';
+  document.getElementById('mashaPanel').style.display=t==='masha'?'':'none';
+  calc();
+}
+
+function switchKaat(k){
+  kaat=k;
+  ['None','Raati','Masha','Pct','Tankhwa','Custom'].forEach(x=>{
+    document.getElementById('k'+x).classList.toggle('active',k===x.toLowerCase());
+    document.getElementById('k'+x+'Panel').style.display=k===x.toLowerCase()?'':'none';
+  });
+  calc();
+}
+
+function gv(id){return parseFloat(document.getElementById(id).value)||0;}
+
+function getWeightG(){
+  if(tab==='gram') return gv('grams');
+  return gv('tola')*TOLA+gv('masha')*MASHA+gv('raati')*RAATI;
+}
+
+function toMR(g){
+  const totalR=Math.round(g/RAATI);
+  const t=Math.floor(totalR/96),r1=totalR%96,m=Math.floor(r1/8),r=r1%8;
+  return (t?t+' tola ':'')+( m?m+' masha ':'')+(r?r+' raati':'') || '0';
+}
+
+function fmt(n){return Math.round(n).toLocaleString('en-PK');}
+function fmtD(n,d){return parseFloat(n.toFixed(d));}
+
+function setVerdict(id,text,cls){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=text; el.className='verdict '+cls;
+}
+
+function calcOldSystem(){
+  const v=gv('oldSystem');
+  const el=document.getElementById('oldSystemResult');
+  if(!el||!v) return;
+  const karat=(v/96*24);
+  const pct=(v/96*100).toFixed(1);
+  const karatName=karat.toFixed(1)+'K';
+  let cls='ok';
+  if(karat<20) cls='bad';
+  else if(karat<22) cls='warn';
+  el.innerHTML=`
+    <div class="teacher-row"><span class="tr-label">Dealer quotes</span><span class="tr-val">${v} out of 96</span></div>
+    <div class="teacher-row"><span class="tr-label">Actual purity</span><span class="tr-val ${cls}">${pct}%</span></div>
+    <div class="teacher-row"><span class="tr-label">Equivalent karat</span><span class="tr-val ${cls}">${karatName}</span></div>
+    <div class="teacher-row"><span class="tr-label">International stamp</span><span class="tr-val ${cls}">${Math.round(v/96*1000)}</span></div>
+    <div class="teacher-verdict ${cls}" style="margin-top:8px">${
+      karat>=22 ? 'This is 22K or above — fair. The dealer is not downgrading your gold with this number.' :
+      karat>=20 ? 'This is '+karatName+' — lower than standard 22K. If your piece is stamped 916 (22K), the dealer is underpaying you by '+(22/24 - v/96).toFixed(3)*100+'% of value.' :
+      'This is '+karatName+' — significantly below 22K. If your piece is stamped 916, the dealer is using this number to drastically underpay you. This is the "76 trick". Reject this valuation.'
+    }</div>
+  `;
+}
+
+function calc(){
+  const pricePerTola=gv('pricePerTola');
+  const karatKey=parseInt(document.getElementById('karat').value);
+  const purity=KARATS[karatKey];
+  const pct=(purity*100).toFixed(1);
+  document.getElementById('pBar').style.width=pct+'%';
+  document.getElementById('pLabel').textContent=pct+'%';
+  const rateG24=pricePerTola/TOLA;
+  const rateGKarat=rateG24*purity;
+  document.getElementById('ratePerG').textContent='Rate: PKR '+fmt(rateGKarat)+'/g at '+karatKey+'K &nbsp;|&nbsp; PKR '+fmt(rateG24)+'/g at 24K base';
+
+  const weightG=getWeightG();
+  const totalMasha=weightG/MASHA;
+  document.getElementById('weightInfo').textContent=
+    fmtD(weightG,3)+'g = '+toMR(weightG)+' | '+fmtD(totalMasha,2)+' masha | '+fmtD(weightG/TOLA,4)+' tola';
+
+  const goldValue=weightG*rateGKarat;
+  let kaatG=0,kaatDesc='',scamMsg='';
+
+  if(kaat==='raati'){
+    const rPM=gv('kaatRaatiPerMasha'),extraM=gv('kaatExtraMasha');
+    kaatG=(totalMasha*rPM*RAATI+extraM*MASHA)*rateGKarat;
+    const effPct=(rPM/8*100).toFixed(1);
+    kaatDesc=rPM+' raati/masha → '+effPct+'% effective per masha';
+    const cls=rPM<=1?'ok':rPM<=2?'warn':'bad';
+    const msg=rPM<=1?'Fair — 0–1 raati/masha is standard for simple jewelry.':
+               rPM<=2?'Acceptable only for complex or intricate work. Push back if the item is simple.':
+               'Excessive — '+rPM+' raati/masha = '+effPct+'% loss per masha. Standard max is 2 raati. Negotiate.';
+    setVerdict('raatiVerdict',msg,cls);
+    if(rPM>2) scamMsg='Warning: '+rPM+' raati/masha is above fair limit (max 2). Effective loss: '+effPct+'% per masha.';
+  } else if(kaat==='masha'){
+    const mF=gv('kaatMashaFlat'),rF=gv('kaatRaatiFlat');
+    const kG=mF*MASHA+rF*RAATI;
+    kaatG=kG*rateGKarat;
+    const kPW=weightG>0?(kG/weightG*100).toFixed(1):0;
+    kaatDesc=mF+' masha '+rF+' raati deducted = '+kPW+'% of weight';
+    const cls=parseFloat(kPW)<=5?'ok':parseFloat(kPW)<=10?'warn':'bad';
+    const msg=parseFloat(kPW)<=5?'Fair — kaat is '+kPW+'% of total weight.':
+               parseFloat(kPW)<=10?'On the high side — '+kPW+'% of weight. Negotiate for complex work only.':
+               'Excessive — '+kPW+'% of total weight is being deducted. Max fair is ~10%.';
+    setVerdict('mashaVerdict',msg,cls);
+    if(parseFloat(kPW)>10) scamMsg='Warning: Masha kaat is '+kPW+'% of total weight — very high.';
+  } else if(kaat==='pct'){
+    const p=gv('kaatPct');
+    kaatG=goldValue*(p/100);
+    kaatDesc=p+'% of gold value';
+    const cls=p<=7?'ok':p<=10?'warn':'bad';
+    const msg=p<=7?'Fair — '+p+'% is within standard range (3–7%).':
+               p<=10?'High but possible for intricate stone-set work. Negotiate.':
+               'Excessive — '+p+'% is above the acceptable maximum of 10%. You are being overcharged.';
+    setVerdict('pctVerdict',msg,cls);
+    if(p>10) scamMsg='Warning: '+p+'% kaat is above industry max of 10%.';
+  } else if(kaat==='tankhwa'){
+    const tankhwa=gv('kaatTankhwa'),imp=gv('kaatImpurity');
+    const effPurity=purity*(1-imp/100)*(1-tankhwa/100);
+    const effKarat=(effPurity*24).toFixed(2);
+    const effFineness=Math.round(effPurity*1000);
+    kaatG=goldValue-(weightG*rateG24*effPurity);
+    kaatDesc='Touch '+tankhwa+'% + impurity '+imp+'% → paying you at '+effKarat+'K ('+effFineness+' fineness)';
+
+    const valueLostPct=((kaatG/goldValue)*100).toFixed(1);
+    const fairKaratRate=rateGKarat;
+    const dealerRate=rateG24*effPurity;
+
+    const rows=[
+      ['Your stamp says',karatKey+'K ('+pct+'% — fineness '+Math.round(purity*1000)+')',
+        karatKey>=22?'ok':'warn'],
+      ['Dealer is paying you at',effKarat+'K (fineness '+effFineness+')',
+        parseFloat(effKarat)>=karatKey?'ok':parseFloat(effKarat)>=karatKey-1?'warn':'bad'],
+      ['Your correct rate/gram','PKR '+fmt(fairKaratRate),'ok'],
+      ['Dealer\'s rate/gram','PKR '+fmt(dealerRate),
+        dealerRate>=fairKaratRate*0.97?'ok':dealerRate>=fairKaratRate*0.93?'warn':'bad'],
+      ['Value lost to touch/impurity claim','PKR '+fmt(kaatG)+' ('+valueLostPct+'% of value)',
+        parseFloat(valueLostPct)<3?'ok':parseFloat(valueLostPct)<8?'warn':'bad'],
+    ];
+
+    document.getElementById('tankhwaRows').innerHTML=rows.map(([l,v,c])=>
+      `<div class="teacher-row"><span class="tr-label">${l}</span><span class="tr-val ${c}">${v}</span></div>`
+    ).join('');
+
+    let vClass,vMsg;
+    if(tankhwa===0&&imp===0){
+      vClass='ok'; vMsg='No touch or impurity deduction entered. If the jeweler is making such a claim, enter their numbers above to see the real impact.';
+    } else if(parseFloat(valueLostPct)<3){
+      vClass='ok'; vMsg='Minor adjustment — less than 3% loss. Could be legitimate. Ask for documentation if over 1%.';
+    } else if(parseFloat(valueLostPct)<8){
+      vClass='warn'; vMsg='Significant downgrade — '+valueLostPct+'% value loss. For hallmarked gold, this is NOT justified without a certified assay lab report. Push back and ask for proof.';
+    } else {
+      vClass='bad'; vMsg='EXCESSIVE — '+valueLostPct+'% of your gold value is being taken through this claim. This is almost certainly the "touch trick." Your hallmark legally certifies the purity. Demand testing at a registered PSQCA assay center. Do not accept this deal.';
+    }
+    document.getElementById('tankhwaVerdict').textContent=vMsg;
+    document.getElementById('tankhwaVerdict').className='teacher-verdict '+vClass;
+    if(imp>2) scamMsg='Warning: '+imp+'% impurity claim on hallmarked gold = likely fraud. PSQCA stamp overrides touchstone. Demand certified assay proof.';
+    else if(tankhwa>5) scamMsg='Warning: '+tankhwa+'% touch deduction is very high. Over 5% on hallmarked gold is suspicious.';
+  } else if(kaat==='custom'){
+    const cG=gv('kaatCustomG');
+    kaatG=cG*rateGKarat;
+    const kPW=weightG>0?(cG/weightG*100).toFixed(1):0;
+    kaatDesc=cG.toFixed(3)+'g ('+fmtD(cG/MASHA,2)+' masha) deducted = '+kPW+'% of weight';
+    const cls=cG<=0.2?'ok':cG<=0.5?'warn':'bad';
+    const msg=cG<=0.2?'Fair solder amount for standard soldered jewelry.':
+               cG<=0.5?'On the high side. Acceptable only for heavy chain or multiple-join pieces.':
+               'Excessive — '+cG+'g solder claim is '+kPW+'% of your gold. Maximum legitimate solder is ~0.3g for heavy pieces.';
+    setVerdict('solderVerdict',msg,cls);
+    if(cG>0.5&&weightG<5) scamMsg='Warning: '+cG+'g solder on '+fmtD(weightG,2)+'g piece is '+kPW+'% — very high.';
+  }
+
+  const kaatPctVal=goldValue>0?kaatG/goldValue*100:0;
+  const making=weightG*gv('makingG')+totalMasha*gv('makingM')+gv('makingF');
+  const total=goldValue-kaatG+making;
+
+  document.getElementById('rGold').textContent='PKR '+fmt(goldValue);
+  document.getElementById('rKaat').textContent='− PKR '+fmt(kaatG);
+  document.getElementById('rKaatSub').textContent=kaatDesc||'No deduction';
+  document.getElementById('rMaking').textContent='+ PKR '+fmt(making);
+  document.getElementById('rKaatPct').textContent=kaatPctVal.toFixed(1)+'%';
+  document.getElementById('rTotal').textContent='PKR '+fmt(total);
+
+  const rows=[
+    ['Weight',fmtD(weightG,3)+'g = '+toMR(weightG),''],
+    ['Karat / PSQCA stamp',karatKey+'K ('+pct+'% purity)',''],
+    ['Market rate per gram','PKR '+fmt(rateGKarat),''],
+    ['Gross gold value','PKR '+fmt(goldValue),'grn'],
+    ['Kaat deduction','− PKR '+fmt(kaatG)+' ('+kaatPctVal.toFixed(1)+'%)','red'],
+    ['Making charges','+ PKR '+fmt(making),''],
+    ['Net total','PKR '+fmt(total),'grn'],
+  ];
+  document.getElementById('breakdownRows').innerHTML=rows.map(([l,v,c])=>
+    `<div class="breakdown-row"><span class="bl">${l}</span><span class="bv ${c}">${v}</span></div>`
+  ).join('');
+
+  let fairness,fairClass='note ok';
+  if(kaat==='none'){fairness='No kaat. You pay/receive full gold value based on weight and purity.';}
+  else if(kaatPctVal<=5){fairness='Kaat is '+kaatPctVal.toFixed(1)+'% of gold value — fair, within normal range. Proceed with confidence.';}
+  else if(kaatPctVal<=10){fairness='Kaat is '+kaatPctVal.toFixed(1)+'% — on the high side. Only acceptable for very intricate work. Negotiate before agreeing.';fairClass='note';}
+  else{fairness='Kaat is '+kaatPctVal.toFixed(1)+'% — EXCESSIVE. Fair max is 10%. You are losing PKR '+fmt(kaatG-goldValue*0.1)+' above fair kaat. Negotiate firmly or walk away.';fairClass='note danger';}
+  const fb=document.getElementById('fairnessBox');
+  fb.textContent=fairness; fb.className=fairClass;
+
+  const sw=document.getElementById('scamWarning');
+  if(scamMsg){sw.style.display='block';sw.textContent=scamMsg;}else{sw.style.display='none';}
+}
+
+document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{
+  calc();
+  calcOldSystem();
+}));
+
+calcOldSystem();
+switchKaat('none');
+calc();
+</script>
+</body>
+</html>
