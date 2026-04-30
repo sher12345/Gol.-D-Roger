@@ -333,8 +333,32 @@
       </div>
       <div id="fairnessBox" class="note ok" style="margin-top:10px">—</div>
     </div>
+    <div class="card">
+      <div class="card-title">Reverse Check — From Seller's Offer</div>
+      <div class="note blue" style="margin-bottom:10px">
+        Enter the <strong>final price the seller offered you</strong> and we'll work <strong>backwards</strong> — showing exactly what kaat / deduction they're hiding inside that price, using the weight, karat, market rate and making charges from above.
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Seller's final offer (PKR)</label>
+          <input type="number" id="sellerOffer" value="0" step="500" min="0" inputmode="numeric" placeholder="e.g. 270000">
+        </div>
+      </div>
+      <div class="teacher-box" id="reverseTeacher" style="margin-top:0">
+        <div class="tb-header">What the seller's price really means</div>
+        <div id="reverseRows"></div>
+        <div id="reverseVerdict" class="teacher-verdict ok" style="margin-top:10px">Enter the seller's offer above to see the breakdown.</div>
+      </div>
+      <div class="explainer" style="margin-top:10px">
+        <strong>How to use this:</strong><br>
+        1. Set your <strong>weight, karat and market rate</strong> at the top of this page.<br>
+        2. Add any <strong>making charges</strong> the seller is openly quoting (so they're not counted as hidden kaat).<br>
+        3. Type the <strong>final number</strong> the seller said they'll pay you (or charge you).<br>
+        4. The box above shows the <strong>hidden kaat</strong>, the <strong>effective karat</strong> they're paying at, and equivalents in raati / % so you can argue back using the same language as the dealer.
+      </div>
 
-  </div><!-- end calc page -->
+  </div>
+  <!-- end calc page -->
 
 
   <!-- ===== HALLMARK GUIDE PAGE ===== -->
@@ -742,6 +766,65 @@ function calc(){
 
   const sw=document.getElementById('scamWarning');
   if(scamMsg){sw.style.display='block';sw.textContent=scamMsg;}else{sw.style.display='none';}
+  
+  // ===== REVERSE CHECK — from seller's offer =====
+  const offer=gv('sellerOffer');
+  const rRows=document.getElementById('reverseRows');
+  const rVerd=document.getElementById('reverseVerdict');
+  if(!offer||offer<=0||weightG<=0||goldValue<=0){
+    rRows.innerHTML='';
+    rVerd.textContent='Enter the seller\'s offer above to see the breakdown.';
+    rVerd.className='teacher-verdict ok';
+  } else {
+    const fairTotal=goldValue+making;
+    const goldOnlyOffer=offer-making;
+    const hiddenKaatG=fairTotal-offer;
+    const hiddenKaatPct=goldValue>0?(hiddenKaatG/goldValue*100):0;
+    const effPurity=goldOnlyOffer>0?(goldOnlyOffer/(weightG*rateG24)):0;
+    const effKarat=effPurity*24;
+    const effFineness=Math.round(effPurity*1000);
+    const effRatePerG=goldOnlyOffer>0?(goldOnlyOffer/weightG):0;
+    const equivRaatiPerMasha=hiddenKaatPct>0?(hiddenKaatPct/100*8):0;
+    const diffPerTola=(fairTotal-offer)/(weightG/TOLA);
+    let cls,verdict,offerDir;
+    if(hiddenKaatG<=-1){
+      cls='ok';
+      offerDir='above';
+      verdict='Seller is offering PKR '+fmt(-hiddenKaatG)+' MORE than the fair price. Either making/labour is being added on top, or this is a great deal — double-check that you\'ve entered all making charges above.';
+    } else if(hiddenKaatPct<=2){
+      cls='ok';
+      offerDir='matches';
+      verdict='Excellent — within 2% of fair value. The seller is essentially paying full market price. Accept with confidence.';
+    } else if(hiddenKaatPct<=5){
+      cls='ok';
+      offerDir='below';
+      verdict='Fair — hidden kaat is '+hiddenKaatPct.toFixed(1)+'% (within the 3–5% normal range). You are losing PKR '+fmt(hiddenKaatG)+' total, equivalent to '+equivRaatiPerMasha.toFixed(2)+' raati per masha. Acceptable.';
+    } else if(hiddenKaatPct<=10){
+      cls='warn';
+      offerDir='below';
+      verdict='High — hidden kaat is '+hiddenKaatPct.toFixed(1)+'%. That\'s PKR '+fmt(hiddenKaatG)+' off fair value, equivalent to '+equivRaatiPerMasha.toFixed(2)+' raati per masha. Push the seller for an extra PKR '+fmt(hiddenKaatG-goldValue*0.05)+' to bring kaat down to a fair 5%.';
+    } else {
+      cls='bad';
+      offerDir='below';
+      verdict='EXCESSIVE — hidden kaat is '+hiddenKaatPct.toFixed(1)+'%. The seller is taking PKR '+fmt(hiddenKaatG)+' off fair value (about PKR '+fmt(diffPerTola)+' per tola), equivalent to '+equivRaatiPerMasha.toFixed(2)+' raati per masha or paying you at '+effKarat.toFixed(1)+'K instead of '+karatKey+'K. Negotiate hard or walk away.';
+    }
+    const cellCls=(c)=>c==='ok'?'ok':c==='warn'?'warn':'bad';
+    const rowsArr=[
+      ['Fair price (gold + making)','PKR '+fmt(fairTotal),'ok'],
+      ['Seller\'s offer','PKR '+fmt(offer),offerDir==='above'?'ok':offerDir==='matches'?'ok':cellCls(cls)],
+      ['Difference (hidden kaat)',(hiddenKaatG>=0?'− PKR ':'+ PKR ')+fmt(Math.abs(hiddenKaatG)),hiddenKaatG<=0?'ok':cellCls(cls)],
+      ['Hidden kaat as % of gold value',hiddenKaatPct.toFixed(1)+'%',cellCls(cls)],
+      ['Equivalent in raati / masha',equivRaatiPerMasha>0?equivRaatiPerMasha.toFixed(2)+' raati per masha':'0 (no kaat)',cellCls(cls)],
+      ['Effective karat seller is paying at',effKarat>0?effKarat.toFixed(2)+'K (fineness '+effFineness+')':'—',effKarat>=karatKey-0.5?'ok':effKarat>=karatKey-1.5?'warn':'bad'],
+      ['Effective rate per gram',effRatePerG>0?'PKR '+fmt(effRatePerG):'—',effRatePerG>=rateGKarat*0.95?'ok':effRatePerG>=rateGKarat*0.9?'warn':'bad'],
+      ['Loss / gain per tola',(diffPerTola>=0?'− PKR ':'+ PKR ')+fmt(Math.abs(diffPerTola)),diffPerTola<=0?'ok':cellCls(cls)],
+    ];
+    rRows.innerHTML=rowsArr.map(([l,v,c])=>
+      `<div class="teacher-row"><span class="tr-label">${l}</span><span class="tr-val ${c}">${v}</span></div>`
+    ).join('');
+    rVerd.textContent=verdict;
+    rVerd.className='teacher-verdict '+cls;
+  }
 }
 
 document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{
