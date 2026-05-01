@@ -344,6 +344,49 @@
 
       <div class="scam-box" id="scamWarning"></div>
     </div><!-- end kaat card -->
+    
+    <!-- SPREAD CHECKER -->
+<div class="card">
+  <div class="card-title">Sarafa Bazar Spread Checker</div>
+  <div class="note blue" style="margin-bottom:12px">
+    Check the live rate on any gold site (sarafa.com.pk, goldpricez.com etc), enter it below along with what the dealer is quoting — we'll show you if the spread is fair or inflated.
+  </div>
+  <div class="row">
+    <div class="field">
+      <label>Sarafa / internet rate per tola (PKR)</label>
+      <input type="number" id="sarafaRate" value="0" step="500" min="0" inputmode="numeric" placeholder="e.g. 295000">
+    </div>
+  </div>
+  <div class="row">
+    <div class="field">
+      <label>Dealer's quoted rate per tola (PKR)</label>
+      <input type="number" id="dealerRate" value="0" step="500" min="0" inputmode="numeric" placeholder="e.g. 288000">
+    </div>
+  </div>
+  <div class="row">
+    <div class="field">
+      <label>Transaction type</label>
+      <select id="spreadType">
+        <option value="selling">I am SELLING gold to dealer</option>
+        <option value="buying">I am BUYING gold from dealer</option>
+      </select>
+    </div>
+  </div>
+  <div class="teacher-box" style="margin-top:0">
+    <div class="tb-header">Spread Analysis</div>
+    <div id="spreadRows">
+      <div class="teacher-row"><span class="tr-label">Enter both rates above to see analysis</span><span class="tr-val ok">—</span></div>
+    </div>
+    <div id="spreadVerdict" class="teacher-verdict ok" style="margin-top:10px">Enter the Sarafa rate and dealer rate above.</div>
+  </div>
+  <div class="explainer mt10">
+    <strong>What is the spread?</strong><br>
+    The spread is the difference between the published market rate and what the dealer actually pays/charges. Dealers always buy lower and sell higher than market — that is their profit. The question is how much.<br><br>
+    <strong>Fair spread (selling your gold):</strong> 1–2% below Sarafa rate. Max 3% is acceptable.<br>
+    <strong>Fair spread (buying jewelry):</strong> 1–3% above Sarafa rate before making charges. Above 5% is excessive.<br>
+    <strong>Red flag:</strong> Any dealer more than 5% away from Sarafa rate is either using a stale rate or padding profit. Walk to the next shop.
+  </div>
+</div>
 
     <!-- MAKING CHARGES -->
     <div class="card">
@@ -893,6 +936,68 @@ function calc(){
   const sw=document.getElementById('scamWarning');
   if(scamMsg){ sw.style.display='block'; sw.textContent=scamMsg; }
   else { sw.style.display='none'; }
+  /* ── SPREAD CHECKER ── */
+  const sarafaRate = gv('sarafaRate');
+  const dealerRateQ = gv('dealerRate');
+  const spreadType = document.getElementById('spreadType').value;
+  const sRows = document.getElementById('spreadRows');
+  const sVerd = document.getElementById('spreadVerdict');
+
+  if(!sarafaRate || !dealerRateQ) {
+    sRows.innerHTML='<div class="teacher-row"><span class="tr-label">Enter both rates above to see analysis</span><span class="tr-val ok">—</span></div>';
+    sVerd.textContent='Enter the Sarafa rate and dealer rate above.';
+    sVerd.className='teacher-verdict ok';
+  } else {
+    const diff = sarafaRate - dealerRateQ;
+    const spreadPct = (diff / sarafaRate * 100);
+    const absPct = Math.abs(spreadPct).toFixed(2);
+    const absDiff = Math.abs(diff);
+    const isSelling = spreadType === 'selling';
+
+    // For selling: dealer pays LESS than sarafa = spread is positive = normal
+    // For buying: dealer charges MORE than sarafa = spread is negative = normal
+    const effectiveSpread = isSelling ? spreadPct : -spreadPct;
+    const fairMax = isSelling ? 3 : 5;
+    const warningMax = isSelling ? 5 : 8;
+
+    let cls, verdict;
+    if(effectiveSpread < 0) {
+      cls = 'ok';
+      verdict = isSelling
+        ? 'Dealer is paying PKR '+fmt(absDiff)+'/tola MORE than Sarafa rate ('+absPct+'% above market). Excellent — take this deal immediately.'
+        : 'Dealer is charging PKR '+fmt(absDiff)+'/tola LESS than Sarafa rate ('+absPct+'% below market). Excellent deal — verify the gold is genuine and proceed.';
+    } else if(effectiveSpread <= fairMax) {
+      cls = 'ok';
+      verdict = isSelling
+        ? 'Spread is '+absPct+'% — dealer pays PKR '+fmt(absDiff)+'/tola below Sarafa rate. This is within the fair 1–3% range. Acceptable.'
+        : 'Spread is '+absPct+'% — dealer charges PKR '+fmt(absDiff)+'/tola above Sarafa rate. This is within the fair 1–3% range before making charges. Acceptable.';
+    } else if(effectiveSpread <= warningMax) {
+      cls = 'warn';
+      verdict = isSelling
+        ? 'Spread is '+absPct+'% — dealer pays PKR '+fmt(absDiff)+'/tola below Sarafa rate. This is high. Push back — ask them to match within 2–3% of Sarafa rate. You are losing PKR '+fmt(absDiff - sarafaRate*0.02)+' extra compared to a fair deal.'
+        : 'Spread is '+absPct+'% — dealer charges PKR '+fmt(absDiff)+'/tola above Sarafa rate. On the high side before even adding making charges. Negotiate the base rate down first.';
+    } else {
+      cls = 'bad';
+      verdict = isSelling
+        ? 'Spread is '+absPct+'% — EXCESSIVE. Dealer is paying PKR '+fmt(absDiff)+'/tola below Sarafa rate. Fair max is 3%. You are being underpaid by PKR '+fmt(absDiff - sarafaRate*0.03)+' per tola above what is acceptable. Go to another dealer.'
+        : 'Spread is '+absPct+'% — EXCESSIVE. Dealer is charging PKR '+fmt(absDiff)+'/tola above Sarafa rate before any making charges. Fair max is 3–5%. You are being overcharged by PKR '+fmt(absDiff - sarafaRate*0.05)+' per tola. Walk away.';
+    }
+
+    const fairDealerRate = isSelling
+      ? Math.round(sarafaRate * 0.97)
+      : Math.round(sarafaRate * 1.03);
+
+    sRows.innerHTML=[
+      ['Sarafa / market rate', 'PKR '+fmt(sarafaRate)+'/tola', 'ok'],
+      ["Dealer's rate", 'PKR '+fmt(dealerRateQ)+'/tola', effectiveSpread<=fairMax?'ok':effectiveSpread<=warningMax?'warn':'bad'],
+      ['Difference', (diff>=0?'PKR −':'PKR +')+fmt(absDiff)+'/tola', effectiveSpread<=fairMax?'ok':effectiveSpread<=warningMax?'warn':'bad'],
+      ['Spread %', absPct+'% '+(isSelling?'below':'above')+' market', effectiveSpread<=fairMax?'ok':effectiveSpread<=warningMax?'warn':'bad'],
+      ['Fair dealer rate should be', 'PKR '+fmt(fairDealerRate)+'/tola (max 3% spread)', 'ok'],
+      ['You should argue for', 'PKR '+fmt(fairDealerRate)+'–'+fmt(Math.round(sarafaRate*0.99))+'/tola', 'ok'],
+    ].map(([l,v,c])=>`<div class="teacher-row"><span class="tr-label">${l}</span><span class="tr-val ${c}">${v}</span></div>`).join('');
+    sVerd.textContent = verdict;
+    sVerd.className = 'teacher-verdict '+cls;
+  }
 
   /* ── REVERSE CHECK ── */
   const offer = gv('sellerOffer');
